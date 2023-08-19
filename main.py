@@ -1,55 +1,51 @@
-import requests, time, random, string, json
+from fastapi import FastAPI
+from enum import Enum
+from pydantic import BaseModel
 
-url = 'https://api.sharpspring.com/pubapi/v1/'
+class Item(BaseModel):
+    name: str
+    description: str | None = None
+    price: float
+    tax: float | None = None
 
-def gera_nome():
-    letters = string.ascii_letters
-    return ''.join(random.choice(letters) for _ in range(10))
+class ModelName(str, Enum):
+    alexnet = "alexnet"
+    resnet = "resnet"
+    lenet = "lenet"
 
-firstName = gera_nome()
+app = FastAPI()
 
-def gera_email():
-    first_name = gera_nome()
-    domain = gera_nome() + ".com"
-    return f"{first_name}@{domain}"
+@app.post("/items/")
+async def create_item(item: Item):
+    return {"message": "Você gerou um novo item!"}, item
 
-emailAddress = gera_email()
-
-headers = {
-    "id": "123",
-    "Content-Type": "application/json",
-}
-
-query_params = {
-    'accountID': '7CB1260E01C728EA9A185A3CED2C68D8',
-    'secretKey': '03E5065CBFF46E2931B62E5A132FACE6'
-}
-
-body = {
-    "method": "createLeads",
-    "params": {
-        "objects": [
-            {
-                "firstName": json.dumps(firstName),
-                "lastName": json.dumps(firstName),
-                "emailAddress": json.dumps(emailAddress)
-            }
-        ]
-    },
-    "id": "123"
-}
-
-def criar_lead(firstName, emailAddress):
-    response = requests.post(url, params=query_params, headers=headers, json=body)
-    print(response.status_code)
-    print(response.text)
-    print(firstName + " " + emailAddress)
+@app.get("/models/{model_name}")
+async def get_model(model_name: ModelName):
+    if model_name is ModelName.alexnet:
+        return {"model_name": model_name, "message": "Deep learning FTW!"}
     
-count = 0
-while count < 5:
-    firstName = gera_nome()
-    emailAddress = gera_email()
-    time.sleep(2)
-    criar_lead(firstName = firstName, emailAddress=emailAddress)
-    time.sleep(10)
-    count += 1
+    if model_name.value == "lenet":
+        return {"model_name": model_name, "message": "LeCNN all the images"}
+    
+    return {"model_name": model_name, "message": "Have some residuals"}
+
+
+
+@app.get("/accountID={account123ID}&secretKey={secret123Key}")
+async def read_item(account123ID:int,secret123Key:int):
+    return {"accountID": account123ID,
+            "secretKey": secret123Key,
+            "message": "Hello World"}
+
+@app.get("/users/me")
+async def read_user_me():
+    return {"user_id": "The current user"}
+
+
+@app.get("/users/{user_id}")
+async def read_user(user_id:str):
+    return {"user_id": user_id}
+
+@app.get("/apisharp/")
+async def read_query(accountID:int, secretKey:int):
+    return {"accountID": accountID, "secretKey": secretKey}
